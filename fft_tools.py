@@ -80,9 +80,9 @@ def fft_find_peaks(ft, num_peaks):
 
     # here we join max_peaks with peak_cols so that it holds the data
     # for each peak in the form of [x, y, height]
-    max_peaks = np.column_stack((peak_cols, np.flip(max_peaks, 1)))
+    max_peaks = np.column_stack((max_peaks, peak_cols))
 
-    return max_vals, max_peaks
+    return max_peaks
 
 
 def fft_mask(ft, peak, radius, shape):
