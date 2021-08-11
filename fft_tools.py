@@ -116,8 +116,8 @@ def fft_mask(ft, peak, radius, shape):
     if shape == 'circle':
 
         # shift the index grid so (0, 0) lands on our 'peak' argument
-        mx = xx - int(peak[0])
-        my = yy - int(peak[1])
+        mx = xx - int(peak[1])
+        my = yy - int(peak[2])
 
         # calculate the distance from the origin of each point on the grid,
         # points that fall within our specified 'radius' are stored as a 1
@@ -130,8 +130,8 @@ def fft_mask(ft, peak, radius, shape):
 
         # shift the index grid so (0, 0) lands on our 'peak' argument
         # and take the absolute value
-        mx = np.abs(xx - int(peak[0]))
-        my = np.abs(yy - int(peak[1]))
+        mx = np.abs(xx - int(peak[1]))
+        my = np.abs(yy - int(peak[2]))
 
         # find all points that fall within our specified radius along the x and y axes
         # using our 1 and 0 for points that fall within and outside of that range respectively
