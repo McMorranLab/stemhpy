@@ -42,7 +42,7 @@ data = sa.data.reshape((scan_y,scan_x))  # numpy likes row x column, stempy is c
 
 empty_frame_counter = 0
 
-length = 75  # fixed crop length for peak analysis
+length = 75  # standardizes area cropped around peaks for analysis
 ampMap = np.zeros((scan_y, scan_x))
 phaseMap = np.zeros((scan_y, scan_x), dtype=np.complex64)
 
