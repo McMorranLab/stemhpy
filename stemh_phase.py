@@ -31,7 +31,7 @@ kernel = np.conj(vacuum_fft)
 
 # extract specimen information
 sa = sparse_array.SparseArray.from_hdf5(dataPath)
-sa = sa[:, :-1, :, :]  # cut off flyback frames
+sa = sa[:, :-1]  # cut off flyback frames
 
 scan_x = sa.shape[0]  # same as sp.attrs['Nx'] in hdf5 file metadata
 scan_y = sa.shape[1]  # same as sp.attrs['Ny'] - 1, since flyback is removed
