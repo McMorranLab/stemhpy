@@ -3,7 +3,6 @@ from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-# my attempt to do what Levi did with fft_tools
 
 def quick_plot(yaxis, log_norm = False):
 
@@ -123,3 +122,49 @@ def create_circular_mask(im_dims, radius, center = None):
 
     return mask, slice_vecs
   
+    
+  # has to be run prior to raveling, which will restructure the sparse array to be 3D and also sum up all frames
+# Trying to calculate np.abs(np.sum(diffraction_pattern)), but, this is the same as just the frame length
+def calc_amplitude(sparse_array):
+    frames = sparse_array.data
+    row_number = sparse_array.shape[0]
+    column_number = sparse_array.shape[1]
+
+    amplitudes = np.array([frame.shape[0] for frame in frames])
+
+    ampMap = amplitudes.reshape((row_number, column_number))
+
+    return ampMap
+
+# can make this into a total complex description of a frame (with the phase) by
+# t = hx_p * np.exp(1.0j * np.angle(t_temp))
+
+# also needs to run upstream of raveling
+def if_empty(sparse_array):
+    frames = sparse_array.data
+    row_number = sparse_array.shape[0]
+    column_number = sparse_array.shape[1]
+
+    lengths = np.array([len(frame) for frame in frames])
+    checker = np.where(lengths == 0)[0]
+    num_empty_frames = checker.shape
+
+    if num_empty_frames == 0:
+        empty = False
+    else:
+        empty = True
+
+    return empty
+
+
+def calc_vacuum_kernel(vacuumPath):
+    from ncempy.io import dm
+
+    File = dm.fileDM(vacuumPath)
+    data = File.getDataset(0)['data']
+
+    fft = np.fft.fftshift(np.fft.fft2(data))
+    kernel = np.conj(fft)
+
+    return kernel
+
