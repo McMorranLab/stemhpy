@@ -37,7 +37,7 @@ row_crop_end = frame_row_num - crop_amount
 col_crop_end = frame_col_num - crop_amount
 
 # find amplitude at every scan position
-ampMap = ds.find_amplitude(sa)
+ampMap = ds.calc_amplitude(sa)
 
 length = 75  # standardizes area cropped around peaks for analysis
 map = np.zeros(num_frames, dtype=np.complex64)
