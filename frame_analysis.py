@@ -1,7 +1,6 @@
 """
 This module contains functions to reconfigure and analyze 4d sparse data in different ways.
 """
-import numpy as np
 from numba import jit, njit, vectorize
 import numba
 from fft_tools import *
@@ -52,7 +51,7 @@ def elec_count_full(data):
 
 
 @njit()
-def elec_count_frame(data, f_index, frame):
+def elec_count_frame(data, f_index, frame, crop=False):
     """
     Counts electron interactions within specified range of frames
     from a flattened 4D sparse array
@@ -66,6 +65,11 @@ def elec_count_frame(data, f_index, frame):
 
     :param frame: index or slice indeces of desired frame(s) of data
     :type frame: int or tuple(int, int)
+
+    :param crop: index of distance from the edge of the image array we
+    are setting crop distance too. Defaults to False, leaving image
+    uncropped
+    :type crop: int
 
     :return: 576 x 576 array of counted electron interactions
     :rtype: np.ndarray(uint4)
@@ -94,4 +98,86 @@ def elec_count_frame(data, f_index, frame):
 
     dp = dp.reshape(576, 576)
 
+    if crop:
+
+        return dp[crop: 576 - crop, crop:576 - crop]
+
     return dp
+
+
+def analyze_frame(data, f_index, frame, crop, peak):
+    """
+    Unpacks single sparse data frame into full array, takes the fft
+    and returns the value at a fourier peak.
+
+    :param data: flattened 1D array of sparse electron interaction data
+    :type data: np.ndarray()
+
+    :param f_index: [n x 2] sized array where n is the number of frames in the data file
+    each item in f_index contains the slice indices of one frame of sparse data
+    :type f_index: np.ndarray([int, int])
+
+    :param frame: index of the frame we are analyzing in f_index.
+    :type frame: int
+
+    :param crop: index of distance from the edge of the image array we
+    are setting crop distance too.
+    :type crop: int
+
+    :param peak: A two item array that contains the x,y coordinates
+    to a fourier peak.
+    :type peak: np.ndarray()
+
+    :return: The value of the fourier peak specified by param peak
+    :rtype: cint
+    """
+    counts = elec_count_frame(data, f_index, (frame,), crop) # ~ order of 4E-5
+    frame_fft = gen_fft(counts) # ~ order of 0.008, 0.004 for rfft
+    fft_peak = frame_fft[peak[0], peak[1]] # ~ order of 9E-7
+    return fft_peak
+
+
+def crop_vacuum(full_data, cutoff, verbose=False):
+    """
+    Crop out the vacuum space around the edges of
+    a full scan
+
+    Adapted from Andrew's algorithm
+
+    :param full_data: 576x576 composite image of electron interactions
+    :type full_data: np.ndarray()
+
+    :param cutoff: value between 1 and 0 that provides a threshold of
+    where we start the crop
+    :type cutoff: float
+
+    :param verbose: Default False. Determines whether or not the program
+    returns all of the cutoff indices or just the lowest one.
+    :type verbose: bool
+
+    :return: the minimum index for where data is detected, which is the point
+    where the crop is set.
+    :rtype: int
+    """
+    rot_diff_patt = np.transpose(full_data)
+    # sum each row and column
+    row_sum = np.sum(full_data, axis=1)
+    column_sum = np.sum(rot_diff_patt, axis=1)
+    # look for first values that don't contain vacuum data
+    signal_light_rows = np.where(row_sum > cutoff * row_sum.max())[0]
+    signal_light_columns = np.where(column_sum > cutoff * column_sum.max())[0]
+    
+    top_row_cutoff = signal_light_rows[0]
+    bottom_row_cutoff = full_data.shape[0] - signal_light_rows[-1]
+    left_column_cutoff = signal_light_columns[0]
+    right_column_cutoff = full_data.shape[0] - signal_light_columns[-1]
+
+    cutoffs = [top_row_cutoff, bottom_row_cutoff, left_column_cutoff, right_column_cutoff]
+    crop_ind = min(cutoffs)
+
+    if verbose:
+        return crop_ind, cutoffs
+    else:
+        return crop_ind
+
+    return None
