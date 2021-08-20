@@ -1,6 +1,7 @@
 """
 This module contains functions that analyze the fft of 4D sparse data sets
 """
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from scipy.signal import find_peaks
