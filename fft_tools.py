@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from scipy.signal import find_peaks
-from frame_analysis import *
 
 
 def gen_fft(data):
@@ -19,7 +18,7 @@ def gen_fft(data):
     :return: A shifted 2d fft of the image data
     :rtype: np.ndarray()
     """
-    return np.fft.fftshift(np.fft.fft2(data))
+    return np.fft.fftshift(np.fft.rfft2(data))
 
 
 def plots(data, fft_data):
@@ -27,12 +26,12 @@ def plots(data, fft_data):
     Simple plotting function: plots the frame data image and fft image next to each other
     NOTE: fft_data must be passed as its absolute value
     """
-    fg, ax = plt.subplots(1, 2)
+    plt.figure()
+    plt.imshow(data)
+    plt.figure()
+    plt.imshow(fft_data, norm=LogNorm())
 
-    ax[0].imshow(data)
-    ax[1].imshow(fft_data, norm=LogNorm())
-
-
+    
 def fft_find_peaks(ft, num_peaks):
     """
     Takes fourier transformed image data and returns the coordinates and height of the
@@ -51,17 +50,14 @@ def fft_find_peaks(ft, num_peaks):
     is at index o.
     :rtype: np.ndarray()
     """
-    max_vals = np.zeros((len(ft)))
     # loop over ft to find the max values of each row
-    for i in np.arange(len(ft)):
-        max_vals[i] = np.max(ft[i])
-
-        # find distinct peaks in max value data
-    peaks, height = find_peaks(max_vals, height=1)
+    max_vals = np.amax(ft, axis=1) # order E-4
+    # find distinct peaks in max value data
+    peaks, height = find_peaks(max_vals, height=1)  # ~ 4E-5
 
     # unpack returned values from find_peaks() and store them as array of [height, index] pairs of each peak
     height = height['peak_heights']
-    peaks = np.stack((height, peaks), axis=-1)
+    peaks = np.stack((height, peaks), axis=-1)  # E-5
 
     # sort that array by the first entry in each peak array by descending order
     sorted_peaks = peaks[np.argsort(-peaks[:, 0])]
@@ -74,15 +70,18 @@ def fft_find_peaks(ft, num_peaks):
     peak_cols = []
 
     # this loop finds the column index that corresponds to each value in peak_rows
-    for i in peak_rows:
+    for i in peak_rows:  # order E-5
         peak_cols.append(np.argmax(ft[int(i)]))
 
     peak_cols = np.array(peak_cols)
 
     # here we join max_peaks with peak_cols so that it holds the data
-    # for each peak in the form of [height, x, y]
-    max_peaks = np.column_stack((max_peaks, peak_cols))'
+    # for each peak in the form of [x, y, height]
+    max_peaks = np.column_stack((max_peaks, peak_cols))  # order E-6
     max_peaks[:, [1, 2]] = max_peaks[:, [2, 1]]
+    max_peaks = max_peaks.astype("u4")
+    if len(max_peaks) == 0:
+        return np.array([[0,0,0]])
 
     return max_peaks
 
@@ -111,7 +110,7 @@ def fft_mask(ft, peak, radius, shape):
     """
     # create meshgrid that physically stores dimensions of ft as a grid in index
     # space. Each point on the grid corresponds to a value of x and y that gives its index
-    xx, yy = np.meshgrid(np.arange(0, ft.shape[0]), np.arange(0, ft.shape[0]))
+    xx, yy = np.meshgrid(np.arange(0, ft.shape[1]), np.arange(0, ft.shape[0]))
 
     # circular mask
     if shape == 'circle':
