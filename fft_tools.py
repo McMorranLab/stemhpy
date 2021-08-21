@@ -78,7 +78,6 @@ def fft_find_peaks(ft, num_peaks):
     # here we join max_peaks with peak_cols so that it holds the data
     # for each peak in the form of [x, y, height]
     max_peaks = np.column_stack((max_peaks, peak_cols))  # order E-6
-    max_peaks[:, [1, 2]] = max_peaks[:, [2, 1]]
     max_peaks = max_peaks.astype("u4")
     if len(max_peaks) == 0:
         return np.array([[0,0,0]])
