@@ -38,7 +38,7 @@ def fft_find_peaks(ft, num_peaks):
     heighest foureir peaks in the dataset. The number of peaks returned is given by
     the argument 'num_peaks'.
 
-    :param ft: The absolute value of a fourier transformed 2D image array.
+    :param ft: Fourier transformed 2D image array.
     :type ft: np.ndarray()
 
     :param num_peaks: The number of fourier peaks we are looking for.
@@ -51,6 +51,7 @@ def fft_find_peaks(ft, num_peaks):
     :rtype: np.ndarray()
     """
     # loop over ft to find the max values of each row
+    ft = np.abs(ft)
     max_vals = np.amax(ft, axis=1) # order E-4
     # find distinct peaks in max value data
     peaks, height = find_peaks(max_vals, height=1)  # ~ 4E-5
