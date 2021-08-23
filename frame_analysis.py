@@ -133,7 +133,7 @@ def analyze_frame(data, f_index, frame, crop, peak):
     """
     counts = elec_count_frame(data, f_index, (frame,), crop) # ~ order of 4E-5
     frame_fft = gen_fft(counts) # ~ order of 0.008, 0.004 for rfft
-    fft_peak = frame_fft[peak[0], peak[1]] # ~ order of 9E-7
+    fft_peak = frame_fft[peak[1], peak[0]] # ~ order of 9E-7
     return fft_peak
 
 
