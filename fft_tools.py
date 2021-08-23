@@ -31,14 +31,14 @@ def plots(data, fft_data):
     plt.figure()
     plt.imshow(fft_data, norm=LogNorm())
 
-    
+
 def fft_find_peaks(ft, num_peaks):
     """
     Takes fourier transformed image data and returns the coordinates and height of the
     heighest foureir peaks in the dataset. The number of peaks returned is given by
     the argument 'num_peaks'.
 
-    :param ft: The absolute value of a fourier transformed 2D image array.
+    :param ft:  A fourier transformed 2D image array.
     :type ft: np.ndarray()
 
     :param num_peaks: The number of fourier peaks we are looking for.
@@ -50,6 +50,10 @@ def fft_find_peaks(ft, num_peaks):
     is at index o.
     :rtype: np.ndarray()
     """
+    # conditional to make sure that ft is an absolute value
+    if not np.all(np.isreal(ft)):
+        ft = np.abs(ft)
+
     # loop over ft to find the max values of each row
     max_vals = np.amax(ft, axis=1) # order E-4
     # find distinct peaks in max value data
@@ -66,6 +70,7 @@ def fft_find_peaks(ft, num_peaks):
     max_peaks = sorted_peaks[:num_peaks]
 
     # reformat so we can loop across our sorted peak row values
+    peaks = max_peaks[:, 0]
     peak_rows = max_peaks[:, 1]
     peak_cols = []
 
@@ -76,8 +81,8 @@ def fft_find_peaks(ft, num_peaks):
     peak_cols = np.array(peak_cols)
 
     # here we join max_peaks with peak_cols so that it holds the data
-    # for each peak in the form of [x, y, height]
-    max_peaks = np.column_stack((max_peaks, peak_cols))  # order E-6
+    # for each peak in the form of [height, row, col] ==> [height, y, x]
+    max_peaks = np.column_stack((peaks, peak_rows, peak_cols))  # order E-6
     max_peaks = max_peaks.astype("u4")
     if len(max_peaks) == 0:
         return np.array([[0,0,0]])
@@ -85,7 +90,7 @@ def fft_find_peaks(ft, num_peaks):
     return max_peaks
 
 
-def fft_mask(ft, peak, radius, shape):
+def fft_mask(ft, peak_ind, radius, shape):
     """
     Creates a boolean mask of an input fft array centered on a specified peak.
     The shape and size of the mask are specified by args 'shape' and 'radius' respectively.
@@ -93,8 +98,8 @@ def fft_mask(ft, peak, radius, shape):
     :param ft: Absolute value of a fourier transformed sample image.
     :type ft: np.ndarray()
 
-    :param peak: An array of peak coordinates stored as [x, y, height].
-    :type peak: np.ndarray()
+    :param peak_ind: The index of the fourier peak the mask is centered on
+    :type peak_ind: int
 
     :param radius: Radius of mask array in the case of a circular mask, or the max distance
     in x and y values from the origin in the case of a square mask.
@@ -111,12 +116,14 @@ def fft_mask(ft, peak, radius, shape):
     # space. Each point on the grid corresponds to a value of x and y that gives its index
     xx, yy = np.meshgrid(np.arange(0, ft.shape[1]), np.arange(0, ft.shape[0]))
 
+    peak = fft_find_peaks(ft, peak_ind + 1)[peak_ind]
+
     # circular mask
     if shape == 'circle':
 
         # shift the index grid so (0, 0) lands on our 'peak' argument
-        mx = xx - int(peak[1])
-        my = yy - int(peak[2])
+        mx = xx - int(peak[2])
+        my = yy - int(peak[1])
 
         # calculate the distance from the origin of each point on the grid,
         # points that fall within our specified 'radius' are stored as a 1
@@ -129,8 +136,8 @@ def fft_mask(ft, peak, radius, shape):
 
         # shift the index grid so (0, 0) lands on our 'peak' argument
         # and take the absolute value
-        mx = np.abs(xx - int(peak[1]))
-        my = np.abs(yy - int(peak[2]))
+        mx = np.abs(xx - int(peak[2]))
+        my = np.abs(yy - int(peak[1]))
 
         # find all points that fall within our specified radius along the x and y axes
         # using our 1 and 0 for points that fall within and outside of that range respectively
@@ -147,3 +154,4 @@ def fft_mask(ft, peak, radius, shape):
         raise ValueError("Mask shape not recognized. Allowed mask shapes: 'circle' and 'square'.")
 
     return bool_mask
+
