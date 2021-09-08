@@ -44,7 +44,7 @@ def fft_find_peaks(ft, num_peaks):
     :type num_peaks: int
     :return: An array of the number of highest Fourier peaks in ft specified by 'num_peaks'
     where each item in the array contains the index and height of a peak in the form of
-    [x, y, height]. The array is sorted in descending order by height, so the highest peak
+    [y, x, height]. The array is sorted in descending order by height, so the highest peak
     is at index o.
     :rtype: np.ndarray()
     """
@@ -81,7 +81,7 @@ def fft_find_peaks(ft, num_peaks):
     # here we join max_peaks with peak_cols so that it holds the data
     # for each peak in the form of [height, row, col] ==> [height, y, x]
     max_peaks = np.column_stack((peaks, peak_rows, peak_cols))  # order E-6
-    max_peaks = max_peaks.astype("u4")
+    max_peaks = max_peaks.astype("int")
     if len(max_peaks) == 0:
         return np.array([[0,0,0]])
 
@@ -127,7 +127,7 @@ def phase_setup(ravelled_sparse_array):
     zeroth_order = peaks[0, 1:]
     first_order = peaks[1, 1:]
 
-    diff = zeroth_order - first_order
+    diff = first_order - zeroth_order
     peak_sep = np.sqrt(np.sum(pow(diff, 2)))
     half_peak_sep = int(peak_sep // 2)
 
