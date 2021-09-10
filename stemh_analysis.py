@@ -25,19 +25,31 @@ frame_row_num = sa.shape[2]
 frame_col_num = sa.shape[3]
 # numpy likes (# of rows, # of columns), but stempy likes (# of columns, # of rows)
 
+ampMap = st.calc_amplitude(sa)
+
 ravelled_sa = sa.ravel_scans()  # take sparse 4Dstem data and flatten into 3D dense
 num_frames = ravelled_sa.shape[0]
 
-# find where the Fourier peaks are and how large selection regions around the first order peak should be
-first_order, selection_size = pe.phase_setup(ravelled_sa)
+# this section computes 3 quantities we'll be using in every step of the loop
+# Do so with a representative frame in the dataset
+# finds 1. location of the Fourier peaks, 2. how large a square will be selected around first order peak,
+# 3. angle of diffraction probes in real space
+
+rep_frame = ravelled_sa[num_frames // 2]  # get representative frame from center of measurement
+rep_fft = st.fftw2D(rep_frame)
+
+fft_peaks = st.fft_find_peaks(rep_fft, 2)  # find two highest magnitude peaks in rep_fft
+
+first_order = fft_peaks[1, 1:]  # location of first order peak
+selection_size = st.calc_box_size(fft_peaks)
+probe_angle = st.calc_inplane_angle(fft_peaks)
 
 # initialize array to store values through loop
 phaseMap = np.zeros(num_frames, dtype=np.complex64)
-ampMap = np.zeros((selection_size, selection_size))
 
 # create vacuum kernel
-vacuum_kernel = pe.calc_vacuum_kernel(vacuumPath)
-kernel_peak = pe.grab_square_sect(vacuum_kernel, selection_size)  # functionally a Dirac delta
+vacuum_kernel = st.kernelize_vacuum_scan(ravelled_sa[50*50])  # human input needed to select what is truly a vacuum frame
+kernel_peak = st.grab_square_box(vacuum_kernel, selection_size)  # functionally a Dirac delta
 
 start = time.time()
 
@@ -55,13 +67,9 @@ for i, frame in enumerate(ravelled_sa):
     # ampMap = ampMap + np.abs(np.fft.ifft2(fourier_space_peak))
 
     # working fftw code
-    ft = pe.fftw2D(frame)  # take Fourier transform of the full frame
+    ft = st.fftw2D(frame)  # take Fourier transform of the full frame
 
-    fourier_space_peak = pe.grab_square_sect(ft, selection_size, first_order)  # select the area around the first peak
-
-    # amplitude computation
-    ifftw = pe.fftw2D(fourier_space_peak, forward=False)  # inverse Fourier transform area around peak
-    ampMap = ampMap + np.abs(ifftw)
+    fourier_space_peak = st.grab_square_box(ft, selection_size, first_order)  # select the area around the first peak
 
     # phase computation 
     t_temp = np.sum(kernel_peak * fourier_space_peak)  # convolve kernel and first order peak (* multiplies elementwise)
