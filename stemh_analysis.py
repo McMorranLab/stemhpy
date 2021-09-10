@@ -53,8 +53,6 @@ kernel_peak = st.grab_square_box(vacuum_kernel, selection_size)  # functionally 
 
 start = time.time()
 
-# the forward Fourier transform is the majority of the work+computation time here,
-# so it's not worth splitting this into two commands
 for i, frame in enumerate(ravelled_sa):
     if i % 5000 == 0:
         print(i)
