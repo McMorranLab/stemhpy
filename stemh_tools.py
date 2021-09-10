@@ -3,7 +3,6 @@ from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import pyfftw
-from ncempy.io import dm
 
 
 def fftw2D(data, forward = True, cores = 4):
@@ -45,7 +44,7 @@ def fft_find_peaks(ft, num_peaks):
     :return: An array of the number of highest Fourier peaks in ft specified by 'num_peaks'
     where each item in the array contains the index and height of a peak in the form of
     [y, x, height]. The array is sorted in descending order by height, so the highest peak
-    is at index o.
+    is at index 0.
     :rtype: np.ndarray()
     """
     # conditional to make sure that ft is an absolute value
@@ -83,19 +82,23 @@ def fft_find_peaks(ft, num_peaks):
     max_peaks = np.column_stack((peaks, peak_rows, peak_cols))  # order E-6
     max_peaks = max_peaks.astype("int")
     if len(max_peaks) == 0:
-        return np.array([[0,0,0]])
+        return np.array([[0, 0, 0]])
 
     return max_peaks
 
 
-def grab_square_sect(arr, box_length, center = None):
+def grab_square_box(arr, box_length, center = None):
     """
-    Wrapper for FFTW package implementation of a complex 2D Fourier transform
+    Selects a square section with variable length from an array centered at a variable point
     :param arr:  A 2D input array
-    :type data: np.ndarray()
+    :type arr: np.ndarray()
+    :param box_length: length of side of box to be selected
+    :type box_length: int
+    :param center: center point of the box to be selected
+    :type center: tuple
+    :return: square portion around center
     :rtype: np.ndarray()
     """
-
     if center is None:  # use center of image
         center = (arr.shape[0] // 2, arr.shape[1] // 2)
 
@@ -111,40 +114,78 @@ def grab_square_sect(arr, box_length, center = None):
     return result
 
 
-def phase_setup(ravelled_sparse_array):
+def calc_box_size(peaks):
     """
-    Want to produce the location of the Fourier peaks and
-    the length between them to use in the phase extraction loop
-    without computing it every time in the loop itself
+    Finds distance between zeroth and first order peaks, then halves this distance.
+    When slicing squares around each peak, halving this distance helps keeping
+    each peak's surroundings distinct from the other's.
+    :param peaks:  A 2D input array of form [y, x, height] from fft_find_peaks
+    :type peaks: np.ndarray()
+    :return: half the Euclidean distance between the 0th and 1st order peaks in Fourier space
+    :rtype: int
     """
-    num_frames = ravelled_sparse_array.shape[0]
-    data = ravelled_sparse_array[num_frames // 2]  # get representative frame from center of measurement
-
-    fft = fftw2D(data)
-
-    peaks = fft_find_peaks(fft, 2)
-
     zeroth_order = peaks[0, 1:]
     first_order = peaks[1, 1:]
 
     diff = first_order - zeroth_order
     peak_sep = np.sqrt(np.sum(pow(diff, 2)))
-    half_peak_sep = int(peak_sep // 2)
+    half_peak_sep = int(peak_sep // 2)  # use
 
-    return first_order, half_peak_sep
+    return half_peak_sep
 
 
-def calc_vacuum_kernel(vacuumPath):
+def calc_inplane_angle(peaks, deg = False):
     """
-    Takes the vacuum scan from a .dm4 file and return the sharply peaked kernel a_0(x)
-    :param vacuumPath: string of the path to the location of the dm4 file in question
-    :type ft: str
+    Determines the angle the three diffraction order probes are at in the specimen plane
+    :param peaks:  A 2D input array of form [y, x, height] from fft_find_peaks
+    :type peaks: np.ndarray()
+    :param deg: Switches whether result is given in radians or degrees. Defaults to radians.
+    :type deg: bool
+    :return: angle between line intersecting all diffraction probes and the +x axis
+    :rtype: float
+    """
+    zeroth_order = peaks[0, 1:]
+    first_order = peaks[1, 1:]
+    diff = first_order - zeroth_order
+
+    angle = np.arctan2(diff[0], diff[1])
+
+    if deg:
+        angle = np.degrees(angle)
+
+    return angle
+
+
+def calc_amplitude(sparse_array):
+    """
+    Calculates the STEM signal a given 4D dataset
+    Since it has to be used on a 4D dataset, it has to be run upstream of ravelling the sparse array
+    Equivalent to computing np.abs(np.sum(diffraction_pattern)) for each frame
+    :param sparse_array:  4D sparse dataset
+    :type sparse_array: SparseArray()
+    :return: STEM signal - an array containing magnitude of each underlying diffraction pattern
+    :rtype: np.array()
+    """
+    frames = sparse_array.data
+    row_number = sparse_array.shape[0]
+    column_number = sparse_array.shape[1]
+
+    amplitudes = np.array([frame.shape[0] for frame in frames])
+
+    ampMap = amplitudes.reshape((row_number, column_number))
+
+    return ampMap
+
+
+def kernelize_vacuum_scan(vacuum):
+    """
+    Takes a vacuum frame (where all three diffracted probes go through vacuum)
+    and return the kernel a_0(x)
+    :param vacuum: array containing proper vacuum frame
+    :type vacuum: np.array()
     :return: complex array containing FFT kernel
-    :rtype: np.ndarray()
+    :rtype: np.array()
     """
-    File = dm.fileDM(vacuumPath)
-    data = File.getDataset(0)['data']
-
     fft = np.fft.fftshift(np.fft.fft2(data))
     kernel = np.conj(fft)
 
