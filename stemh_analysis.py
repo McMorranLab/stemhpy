@@ -12,7 +12,6 @@ import stemh_tools as st
 
 dataPath = '/Users/andrewducharme/Documents/Data/ercius_210420/data_scan332_th4.0_electrons.h5'
 savePath = '/Users/andrewducharme/Documents/Sparse Code/'
-vacuumPath = '/Users/andrewducharme/Documents/Data/ercius_210420/Other Files/scan332_vacuum.dm4'
 
 # extract specimen information
 # open 4dstem data from h5 file
