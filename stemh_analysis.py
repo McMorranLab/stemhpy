@@ -8,7 +8,7 @@ from matplotlib.colors import LogNorm
 from stempy.io import sparse_array
 
 # our module
-import phase_extraction as pe
+import stemh_tools as st
 
 dataPath = '/Users/andrewducharme/Documents/Data/ercius_210420/data_scan332_th4.0_electrons.h5'
 savePath = '/Users/andrewducharme/Documents/Sparse Code/'
