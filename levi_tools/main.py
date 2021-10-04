@@ -1,13 +1,10 @@
 """
+Levi Brown 
+
 This module is just an example of how to use the fft_tools.py and frame_analysis.py modules
 
-benchmark:
- 128 x 128: 32s uncropped, 70s cropped
-    predicts 8 min for 512 x 512
-    predicts 2 min for 256 x 256
-
- 256 x 256: 119 s uncropped,
-
+main() computes the phase and amplitude of each frame, and uses parallelization as an approach
+to decrease runtime in the main loop.
 """
 import numba
 import numpy as np
