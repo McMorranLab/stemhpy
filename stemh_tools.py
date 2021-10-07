@@ -196,7 +196,7 @@ def kernelize_vacuum_scan(vacuum):
     :return: complex array containing FFT kernel
     :rtype: np.array()
     """
-    fft = np.fft.fftshift(np.fft.fft2(data))
+    fft = np.fft.fftshift(np.fft.rfft2(data))
     kernel = np.conj(fft)
 
     return kernel
