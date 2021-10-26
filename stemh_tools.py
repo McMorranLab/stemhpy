@@ -5,7 +5,7 @@ from matplotlib.colors import LogNorm
 import pyfftw
 
 
-def fftw2D(data, forward = True, cores = 4):
+def fftw2D(data, forward = True, cores = 4, rfft=True):
     """
     Wrapper for FFTW package implementation of a complex 2D Fourier transform
     :param data:  A 2D image array
@@ -14,11 +14,21 @@ def fftw2D(data, forward = True, cores = 4):
     :type forward: bool
     :param cores: Number of computer cores the FFT is threaded around
     :type cores: int
+    :param rfft: Conditional that tells function whether or not to setup for a real or complex fftw.
+    Defauts to True
+    :type rfft: Bool
     :return: 2D Fourier transform of given array
     :rtype: np.ndarray()
     """
-    input = pyfftw.empty_aligned(data.shape, dtype='complex64')  # establish bit aligned arrays to prepare the FFT
-    output = pyfftw.empty_aligned(data.shape, dtype='complex64')
+    # establish bit aligned arrays to prepare the FFT
+    if rfft:
+        # setup for real fftw scheme
+        input = pyfftw.empty_aligned(data.shape, dtype='float32')
+        output = pyfftw.empty_aligned((input.shape[0], input.shape[-1] // 2 + 1), dtype='complex64')
+    else:
+        # setup for a complex fftw scheme
+        input = pyfftw.empty_aligned(data.shape, dtype='complex64')
+        output = pyfftw.empty_aligned(data.shape, dtype='complex64')
     input[:] = data  # assign the data to the input array
 
     # execute Fourier transform
@@ -186,7 +196,7 @@ def kernelize_vacuum_scan(vacuum):
     :return: complex array containing FFT kernel
     :rtype: np.array()
     """
-    fft = np.fft.fftshift(np.fft.fft2(data))
+    fft = np.fft.fftshift(np.fft.rfft2(data))
     kernel = np.conj(fft)
 
     return kernel
