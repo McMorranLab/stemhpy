@@ -50,6 +50,11 @@ phaseMap = np.zeros(num_frames, dtype=np.complex64)
 vacuum_kernel = st.kernelize_vacuum_scan(ravelled_sa[50*50])  # human input needed to select what is truly a vacuum frame
 kernel_peak = st.grab_square_box(vacuum_kernel, selection_size)  # functionally a Dirac delta
 
+# setting up pyfftw numpy interface
+pyfftw.config.NUM_THREADS = multiprocessing.cpu_count()
+pyfftw.config.PLANNER_EFFORT = 'FFTW_ESTIMATE'
+pyfftw.interfaces.cache.enable()
+
 start = time.time()
 
 for i, frame in enumerate(ravelled_sa):
@@ -64,7 +69,12 @@ for i, frame in enumerate(ravelled_sa):
     # ampMap = ampMap + np.abs(np.fft.ifft2(fourier_space_peak))
 
     # working fftw code
-    ft = st.fftw2D(frame)  # take Fourier transform of the full frame
+    # copy frame data into bit alligned float32 array
+    input = np.empty(frame.shape, dtype='float32')
+    input[:] = frame
+    
+    ft = pyfftw.interfaces.numpy_fft.rfft2(input)  # take Fourier transform of the full frame
+    ft = pyfftw.interfaces.numpy_fft.fftshift(ft)
 
     fourier_space_peak = st.grab_square_box(ft, selection_size, first_order)  # select the area around the first peak
 
