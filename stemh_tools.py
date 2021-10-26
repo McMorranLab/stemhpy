@@ -185,18 +185,3 @@ def calc_amplitude(sparse_array):
     ampMap = amplitudes.reshape((row_number, column_number))
 
     return ampMap
-
-
-def kernelize_vacuum_scan(vacuum):
-    """
-    Takes a vacuum frame (where all three diffracted probes go through vacuum)
-    and return the kernel a_0(x)
-    :param vacuum: array containing proper vacuum frame
-    :type vacuum: np.array()
-    :return: complex array containing FFT kernel
-    :rtype: np.array()
-    """
-    fft = np.fft.fftshift(np.fft.rfft2(data))
-    kernel = np.conj(fft)
-
-    return kernel
