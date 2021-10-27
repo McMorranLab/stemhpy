@@ -64,11 +64,6 @@ for i, frame in enumerate(ravelled_sa):
         phaseMap[i] = 0
         continue
 
-    # working numpy code
-    # fft = np.fft.fftshift(np.fft.rfft2(frame))
-    # ampMap = ampMap + np.abs(np.fft.ifft2(fourier_space_peak))
-
-    # working fftw code
     # copy frame data into bit alligned float32 array
     input = np.empty(frame.shape, dtype='float32')
     input[:] = frame
