@@ -1,3 +1,10 @@
+## accelerated version of analysis method used in Yasin et al. APL 133, 23102 (2018)
+## and Harvey et al. Phys. Rev. Applied 10, 061001 (2018).
+## this uses a reference frame inside the analysis itself, which introduces further error
+## and assumes the value the FFT produces as the phase is accurate, which is not true
+## due to leakage and other discrete artifacts.
+
+
 # base python modules
 import numpy as np
 import time
