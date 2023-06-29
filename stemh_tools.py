@@ -124,6 +124,64 @@ def grab_square_box(arr, box_length, center = None):
     return result
 
 
+def plane_subtract(arr, center=None, selected_rows=None, selected_columns=None):
+    """"
+    Fit a plane to a region of arr centered at center
+    and of (length, width) = (selected_rows, selected_columns)
+    Subtract the fit plane from the entirety of arr
+    :param arr: data with apparent linear slant
+    :type arr: np.ndarray()
+    :param center: location fit plane is centered around
+    :type center: tuple
+    :param selected_rows:
+    :type int:
+    :param selected_columns:
+    :type int:
+    :return: arr subtracted by fit plane broadcasted to whole arr size
+    :rtype: nd.ndarray()
+    """
+    from scipy.optimize import curve_fit
+
+    def plane(X, a, b, c):
+        x, y = X
+        return (a * x + b * y + c)
+
+    row_num = arr.shape[0]
+    col_num = arr.shape[1]
+
+    rows = np.arange(row_num, dtype=float)
+    cols = np.arange(col_num, dtype=float)
+
+    X, Y = np.meshgrid(rows, cols)
+    XX = X.flatten()
+    YY = Y.flatten()
+    xdata = np.vstack((XX, YY))
+
+    if center is None:
+        coef = curve_fit(plane, xdata, arr.ravel())[0]
+
+    if center is not None:
+        fit_arr = grab_box(arr, selected_rows, selected_columns, center)
+        frow_num = fit_arr.shape[0]
+        fcol_num = fit_arr.shape[1]
+        rows = np.arange(frow_num, dtype=float)
+        cols = np.arange(fcol_num, dtype=float)
+
+        X, Y = np.meshgrid(rows, cols)
+        XX = X.flatten()
+        YY = Y.flatten()
+        fxdata = np.vstack((XX, YY))
+
+        coef = curve_fit(plane, fxdata, fit_arr.ravel())[0]
+
+    fit_plane = plane(xdata, coef[0], coef[1], coef[2]).reshape(row_num, col_num)
+    clean_arr = arr - fit_plane
+
+    return clean_arr
+
+
+#### depreciated functions
+
 def calc_box_size(peaks):
     """
     Finds distance between zeroth and first order peaks, then halves this distance.
