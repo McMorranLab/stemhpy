@@ -1,8 +1,11 @@
 import numpy as np
-from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import pyfftw
+
+from scipy.signal import find_peaks
+from scipy.ndimage import maximum_filter
+from scipy.ndimage import gaussian_filter
 
 
 def fftw2D(data, forward = True, cores = 4, rfft=True):
@@ -42,59 +45,113 @@ def fftw2D(data, forward = True, cores = 4, rfft=True):
     return fft
 
 
-def fft_find_peaks(ft, num_peaks):
-    """
-    Takes Fourier transformed image data and returns the coordinates and height of the
-    highest Fourier peaks in the dataset. The number of peaks returned is given by
-    the argument 'num_peaks'.
-    :param ft:  A Fourier transformed 2D image array.
-    :type ft: np.ndarray()
-    :param num_peaks: The number of fourier peaks we are looking for.
-    :type num_peaks: int
-    :return: An array of the number of highest Fourier peaks in ft specified by 'num_peaks'
-    where each item in the array contains the index and height of a peak in the form of
-    [y, x, height]. The array is sorted in descending order by height, so the highest peak
-    is at index 0.
-    :rtype: np.ndarray()
-    """
+def find_fft_peaks(ft, num_peaks=2, filter_strength=25):
+    '''
+    Finds the locations of peaks in Fourier transforms of interference patterns
+    The phase of these peaks IS the STEMH measurement
+
+    Parameters
+    ----------
+    ft: np.ndarray, dtype float or complex
+        Fourier transform of interference pattern. Can be the magnitude or complex array
+    num_peaks: int
+        Number of determined maxima returned by function
+    filter_strength: int or float
+        Size of neighborhood a given pixel is compared to when looking for maxima
+
+    Returns
+    -------
+    num_peaks x 2 array of peak locations
+    '''
     # conditional to make sure that ft is an absolute value
     if not np.all(np.isreal(ft)):
         ft = np.abs(ft)
 
-    # loop over ft to find the max values of each row
-    max_vals = np.amax(ft, axis=1) # order E-4
-    # find distinct peaks in max value data
-    peaks, height = find_peaks(max_vals, height=1)  # ~ 4E-5
+    # join all maxima of a Fourier peak together
+    filtered_ft = maximum_filter(ft,size=filter_strength)
+    # get each row's maximum
+    row_maxima = np.max(filtered_ft,axis=1)
+    # smooth this discretized signal
+    smoothed_row_maxima = gaussian_filter(row_maxima,10)
 
-    # unpack returned values from find_peaks() and store them as array of [height, index] pairs of each peak
-    height = height['peak_heights']
-    peaks = np.stack((height, peaks), axis=-1)  # E-5
+    # find individual peaks in the smoothed maxima
+    # because find_peaks ignores things connected to the end of the array,
+    # this should eliminate the 0th order
+    peak_rows, peak_heights = find_peaks(smoothed_row_maxima, ft.max()/(10**3))
+    peak_heights = peak_heights['peak_heights']
 
-    # sort that array by the first entry in each peak array by descending order
-    sorted_peaks = peaks[np.argsort(-peaks[:, 0])]
+    peak_rows_by_height = peak_rows[np.argsort(peak_heights)][::-1]
 
-    # take several of the heighest peak values as given by param num_peaks
-    max_peaks = sorted_peaks[:num_peaks]
+    # now need to go from knowing the neighborhood of where the peak is
+    # to actually knowing the (x,y) coordinates of the peak
+    peak_locs_by_height = np.zeros((peak_rows_by_height.size,2), dtype=int)
+    for i, peak_row_num in enumerate(peak_rows_by_height):
+        peak_vicinity = np.where(filtered_ft == np.max(filtered_ft[peak_row_num]),
+                                ft,0)
+        peak_loc = np.unravel_index(np.argmax(peak_vicinity), peak_vicinity.shape)
+        peak_locs_by_height[i] = peak_loc
 
-    # reformat so we can loop across our sorted peak row values
-    peaks = max_peaks[:, 0]
-    peak_rows = max_peaks[:, 1]
-    peak_cols = []
+    if num_peaks > peak_locs_by_height.size:
+        print("More peaks requested than found.")
+        num_peaks = peak_locs_by_height.size
+    
+    output_peaks = peak_locs_by_height[:num_peaks]
 
-    # this loop finds the column index that corresponds to each value in peak_rows
-    for i in peak_rows:  # order E-5
-        peak_cols.append(np.argmax(ft[int(i)]))
+    return output_peaks
 
-    peak_cols = np.array(peak_cols)
+# def fft_find_peaks(ft, num_peaks):
+#     """
+#     Takes Fourier transformed image data and returns the coordinates and height of the
+#     highest Fourier peaks in the dataset. The number of peaks returned is given by
+#     the argument 'num_peaks'.
+#     :param ft:  A Fourier transformed 2D image array.
+#     :type ft: np.ndarray()
+#     :param num_peaks: The number of fourier peaks we are looking for.
+#     :type num_peaks: int
+#     :return: An array of the number of highest Fourier peaks in ft specified by 'num_peaks'
+#     where each item in the array contains the index and height of a peak in the form of
+#     [y, x, height]. The array is sorted in descending order by height, so the highest peak
+#     is at index 0.
+#     :rtype: np.ndarray()
+#     """
+#     # conditional to make sure that ft is an absolute value
+#     if not np.all(np.isreal(ft)):
+#         ft = np.abs(ft)
 
-    # here we join max_peaks with peak_cols so that it holds the data
-    # for each peak in the form of [height, row, col] ==> [height, y, x]
-    max_peaks = np.column_stack((peaks, peak_rows, peak_cols))  # order E-6
-    max_peaks = max_peaks.astype("int")
-    if len(max_peaks) == 0:
-        return np.array([[0, 0, 0]])
+#     # loop over ft to find the max values of each row
+#     max_vals = np.amax(ft, axis=1) # order E-4
+#     # find distinct peaks in max value data
+#     peaks, height = find_peaks(max_vals, height=1)  # ~ 4E-5
 
-    return max_peaks
+#     # unpack returned values from find_peaks() and store them as array of [height, index] pairs of each peak
+#     height = height['peak_heights']
+#     peaks = np.stack((height, peaks), axis=-1)  # E-5
+
+#     # sort that array by the first entry in each peak array by descending order
+#     sorted_peaks = peaks[np.argsort(-peaks[:, 0])]
+
+#     # take several of the heighest peak values as given by param num_peaks
+#     max_peaks = sorted_peaks[:num_peaks]
+
+#     # reformat so we can loop across our sorted peak row values
+#     peaks = max_peaks[:, 0]
+#     peak_rows = max_peaks[:, 1]
+#     peak_cols = []
+
+#     # this loop finds the column index that corresponds to each value in peak_rows
+#     for i in peak_rows:  # order E-5
+#         peak_cols.append(np.argmax(ft[int(i)]))
+
+#     peak_cols = np.array(peak_cols)
+
+#     # here we join max_peaks with peak_cols so that it holds the data
+#     # for each peak in the form of [height, row, col] ==> [height, y, x]
+#     max_peaks = np.column_stack((peaks, peak_rows, peak_cols))  # order E-6
+#     max_peaks = max_peaks.astype("int")
+#     if len(max_peaks) == 0:
+#         return np.array([[0, 0, 0]])
+
+#     return max_peaks
 
 
 def grab_square_box(arr, box_length, center = None):
