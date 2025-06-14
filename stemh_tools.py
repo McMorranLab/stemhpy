@@ -161,7 +161,7 @@ def plane_subtract(arr, center=None, selected_rows=None, selected_columns=None):
         coef = curve_fit(plane, xdata, arr.ravel())[0]
 
     if center is not None:
-        fit_arr = grab_box(arr, selected_rows, selected_columns, center)
+        fit_arr = grab_square_box(arr, selected_rows, selected_columns, center)
         frow_num = fit_arr.shape[0]
         fcol_num = fit_arr.shape[1]
         rows = np.arange(frow_num, dtype=float)
@@ -226,11 +226,11 @@ def calc_inplane_angle(peaks, deg = False):
 
 def calc_amplitude(sparse_array):
     """
-    Calculates the STEM signal a given 4D dataset
+    Calculates the STEM signal a given 4D Camera dataset
     Since it has to be used on a 4D dataset, it has to be run upstream of ravelling the sparse array
     Equivalent to computing np.abs(np.sum(diffraction_pattern)) for each frame
     :param sparse_array:  4D sparse dataset
-    :type sparse_array: SparseArray()
+    :type sparse_array: stempy.SparseArray()
     :return: STEM signal - an array containing magnitude of each underlying diffraction pattern
     :rtype: np.array()
     """
