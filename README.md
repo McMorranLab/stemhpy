@@ -1,5 +1,7 @@
 # stemhpy
 
-Andrew Ducharme and Levi Brown's tools for analyzing scanning transmission electron microscopy holography (STEMH) data.
+Tools for analyzing scanning transmission electron microscopy holography (STEMH) data.
 
-i4dstem.ipynb is the fastest, most recently updated analysis code, drawing functions from stemh_tools.py. levi_tools contains Levi's work to optimize computation time.
+Written by Andrew Ducharme and Levi Brown. dataAnalysis.ipynb is the most recently updated analysis code, drawing functions from stemh_tools.py.
+
+See branch levi-accelerated for Levi's work to optimize computation time. It only works for data taken with the 4D Camera on the TEAM 0.5.
