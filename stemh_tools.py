@@ -49,6 +49,7 @@ def find_fft_peaks(ft, num_peaks=2, filter_strength=25):
     '''
     Finds the locations of peaks in Fourier transforms of interference patterns
     The phase of these peaks IS the STEMH measurement
+    That is, except for the 0th order (origin) which we want to avoid
 
     Parameters
     ----------
