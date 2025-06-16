@@ -96,14 +96,19 @@ def grab_box(arr, square_length=None, center=None, selection_indices=None):
 
         halfwidth = int(square_length / 2)
 
-        x_upper_ind = center[0] + halfwidth + 1
-        x_lower_ind = center[0] - halfwidth
-        y_upper_ind = center[1] + halfwidth + 1
-        y_lower_ind = center[1] - halfwidth
+        row_upper_ind = center[0] + halfwidth + 1
+        row_lower_ind = center[0] - halfwidth
+        col_upper_ind = center[1] + halfwidth + 1
+        col_lower_ind = center[1] - halfwidth
     elif selection_indices is not None:
-        x_lower_ind, x_upper_ind, y_lower_ind, y_upper_ind = selection_indices
+        row_lower_ind, row_upper_ind, col_lower_ind, col_upper_ind = selection_indices
 
-    result = arr[x_lower_ind:x_upper_ind, y_lower_ind:y_upper_ind]
+    result = arr[row_lower_ind:row_upper_ind, col_lower_ind:col_upper_ind]
+
+    index_too_small = row_lower_ind < 0 or col_lower_ind < 0
+    index_too_big = row_upper_ind > arr.shape[0] or col_upper_ind > arr.shape[1]
+    if index_too_small or index_too_big:  
+        raise Exception("Desired region extends beyond provided array")
 
     return result
 
