@@ -4,6 +4,7 @@ from matplotlib.colors import LogNorm
 import pyfftw
 
 from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
 from scipy.ndimage import maximum_filter
 from scipy.ndimage import gaussian_filter
 
@@ -65,51 +66,69 @@ def find_fft_peaks(ft, num_peaks=2, filter_strength=25):
     return output_peaks
 
 
-def grab_square_box(arr, box_length, center = None):
+def grab_box(arr, square_length=None, center=None, selection_indices=None):
     """
-    Selects a square section with variable length from an array centered at a variable point
-    :param arr:  A 2D input array
-    :type arr: np.ndarray()
-    :param box_length: length of side of box to be selected
-    :type box_length: int
-    :param center: center point of the box to be selected
-    :type center: tuple
-    :return: square portion around center
-    :rtype: np.ndarray()
+    Selects a section of the input array in one of two ways.
+    1. a square of fixed length (square_length) centered around a given point (center), or 
+    2. a rectangle with specified corner indices (selection_indices)
+
+    Parameters
+    ----------
+    arr, np.ndarray
+        A 2D input array
+    center, 1 x 2 tuple of ints, optional
+        center point of box to be selected
+    square_length, int, optional
+        length of side of box to be selected
+    selection_indices, 1 x 4 tuple of ints, optional
+        tuple of desired indices set by (first row, last row, first column, last column)
+
+    Returns
+    ----------
+    2d array of desired region of interest within arr
     """
-    if center is None:  # use center of image
-        center = (arr.shape[0] // 2, arr.shape[1] // 2)
+    if selection_indices is not None and square_length is not None:
+        raise Exception("Must use either square_length or selection_indices, not both")
 
-    halfwidth = int(box_length / 2)
+    if square_length is not None:
+        if center is None:  # use center of image
+            center = (arr.shape[0] // 2, arr.shape[1] // 2)
 
-    x_upper_ind = center[0] + halfwidth + 1
-    x_lower_ind = center[0] - halfwidth
-    y_upper_ind = center[1] + halfwidth + 1
-    y_lower_ind = center[1] - halfwidth
+        halfwidth = int(square_length / 2)
+
+        x_upper_ind = center[0] + halfwidth + 1
+        x_lower_ind = center[0] - halfwidth
+        y_upper_ind = center[1] + halfwidth + 1
+        y_lower_ind = center[1] - halfwidth
+    elif selection_indices is not None:
+        x_lower_ind, x_upper_ind, y_lower_ind, y_upper_ind = selection_indices
 
     result = arr[x_lower_ind:x_upper_ind, y_lower_ind:y_upper_ind]
 
     return result
 
 
-def plane_subtract(arr, center=None, selected_rows=None, selected_columns=None):
+def plane_subtract(arr, square_length=None, center=None, selection_indices=None):
     """"
-    Fit a plane to a region of arr centered at center
-    and of (length, width) = (selected_rows, selected_columns)
-    Subtract the fit plane from the entirety of arr
-    :param arr: data with apparent linear slant
-    :type arr: np.ndarray()
-    :param center: location fit plane is centered around
-    :type center: tuple
-    :param selected_rows:
-    :type int:
-    :param selected_columns:
-    :type int:
-    :return: arr subtracted by fit plane broadcasted to whole arr size
-    :rtype: nd.ndarray()
-    """
-    from scipy.optimize import curve_fit
+    Fit a plane to a region of interest within arr
 
+    If no optional parameters are provided, the whole array will be used for fit
+
+    Parameters
+    ----------
+    arr, np.ndarray
+        2D array with apparent linear slant
+    center, 1 x 2 tuple of ints, optional
+        center point of box to be selected
+    square_length, int, optional
+        length of side of box to be selected
+    selection_indices, 1 x 4 tuple of ints, optional
+        tuple of desired indices set by (first row, last row, first column, last column)
+
+    Returns
+    ----------
+    2d array subtracted by fit plane broadcasted to whole arr size
+    """
     def plane(X, a, b, c):
         x, y = X
         return (a * x + b * y + c)
@@ -125,11 +144,15 @@ def plane_subtract(arr, center=None, selected_rows=None, selected_columns=None):
     YY = Y.flatten()
     xdata = np.vstack((XX, YY))
 
-    if center is None:
+    if square_length is None and center is None and selection_indices is None:
         coef = curve_fit(plane, xdata, arr.ravel())[0]
 
     if center is not None:
-        fit_arr = grab_square_box(arr, selected_rows, selected_columns, center)
+        fit_arr = grab_box(arr, 
+                           square_length=square_length, 
+                           center=center,
+                           selection_indices=selection_indices)
+        
         frow_num = fit_arr.shape[0]
         fcol_num = fit_arr.shape[1]
         rows = np.arange(frow_num, dtype=float)
