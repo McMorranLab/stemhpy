@@ -1,5 +1,4 @@
 # base python modules
-import os
 import glob
 import time
 import numpy as np
@@ -20,7 +19,7 @@ import stemh_tools as st
 # paths hard coded from your own device
 dataPath = '/Users/andrewducharme/University of Oregon Dropbox/UO-McMorran Lab/ParticipantFiles/Ducharme/Data/STEMH/2306_NCEM_Magnetics/Data/23-06-07/ef_4dstem_edge.dm4'
 baseSavePath = '/Users/andrewducharme/University of Oregon Dropbox/UO-McMorran Lab/ParticipantFiles/Ducharme/Data/STEMH/2306_NCEM_Magnetics/Data/23-06-07/'
-timing = True
+timing = False
 verbose = False
 
 for path in glob.glob(dataPath + '*.dm4'):
