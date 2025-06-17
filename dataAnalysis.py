@@ -95,9 +95,8 @@ for i, order in enumerate(orders):
             end = time.time()
             print("Total time (s): " + str(end - start))
 
-        savePathDetails = 'phase_ord' + str(order_num) + '_ss' + str(selection_size)
-
         # save raw reconstruction
+        savePathDetails = 'phase_ord' + str(order_num) + '_ss' + str(selection_size)
         fig, ax = plt.subplots(tight_layout=True)
         ax.imshow(phaseMap)        
         fig.savefig(savePath + savePathDetails + '.png', dpi = 150)
