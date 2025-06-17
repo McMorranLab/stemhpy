@@ -14,7 +14,9 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import pyfftw
 from matplotlib.colors import LogNorm
+from multiprocessing import cpu_count
 
 # NCEM + Molecular Foundry modules
 from stempy.io import sparse_array
@@ -61,7 +63,7 @@ phaseMap = np.zeros(num_frames, dtype=np.complex64)
 # kernel_peak = st.grab_square_box(vacuum_kernel, selection_size)  # functionally a Dirac delta
 
 # setting up pyfftw numpy interface
-pyfftw.config.NUM_THREADS = multiprocessing.cpu_count()
+pyfftw.config.NUM_THREADS = cpu_count()
 pyfftw.config.PLANNER_EFFORT = 'FFTW_ESTIMATE'
 pyfftw.interfaces.cache.enable()
 
