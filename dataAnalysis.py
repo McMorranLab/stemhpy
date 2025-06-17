@@ -69,8 +69,8 @@ base = np.empty((frame_row_num, frame_col_num), dtype='float32')
 num_frames = scan_col_num * scan_row_num
 data1D = data.reshape((num_frames, frame_row_num, frame_col_num))
 
-for order in orders:
-    order_num = tuple.index(orders, order) + 1
+for i, order in enumerate(orders):
+    order_num = i + 1
     for selection_size in [1,3,5,7]:
         # initialize arrays to store values through loop
         peaks = np.zeros(num_frames, dtype=complex)
@@ -104,6 +104,7 @@ for order in orders:
         np.save(savePath + savePathDetails, phaseMap)
 
         # save unwrapped and rough plane-subtracted reconstruction
+        savePathDetails = 'phase_unwrapped_ord' + str(order_num) + '_ss' + str(selection_size)
         fig, ax = plt.subplots(tight_layout=True)
         ax.imshow(st.plane_subtract(unwrap_phase(phaseMap)))        
         fig.savefig(savePath + savePathDetails + '.png', dpi = 150)
