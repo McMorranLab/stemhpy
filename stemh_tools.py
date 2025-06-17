@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -174,6 +175,25 @@ def plane_subtract(arr, square_length=None, center=None, selection_indices=None)
     clean_arr = arr - fit_plane
 
     return clean_arr
+
+
+def get_file_name(path):
+    return os.path.basename(path).split('.')[0]
+
+
+def mkdir(new_path):
+    '''
+    makes new directory, silently handling error if file already exists,
+    but still throwing all other OSErrors
+    '''
+    
+    try:
+        os.mkdir(new_path)
+    except OSError as error:
+        if error.errno != 17:
+            raise Exception(OSError)
+
+    return
 
 
 #### depreciated functions
