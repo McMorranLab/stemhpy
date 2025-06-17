@@ -29,7 +29,7 @@ for path in glob.glob(dataPath + '*.dm4'):
     savePath = baseSavePath + fileName + '/'
     st.mkdir(savePath)
 
-    datacube = py4DSTEM.import_file(dataPath)
+    datacube = py4DSTEM.import_file(path)
     data = datacube.data
 
     datacube, hf_mask = datacube.filter_hot_pixels(thresh=0.05, return_mask=True)
