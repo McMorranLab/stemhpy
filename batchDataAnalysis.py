@@ -94,7 +94,7 @@ for path in glob.glob(dataPath + '*.dm4'):
                 ft = pyfftw.interfaces.numpy_fft.rfft2(base)  # take Fourier transform of the windowed frame
                 # ft = cupy.fft.rfft2(cupy.asarray(frame)) # uncomment for gpus
 
-                fourier_space_peak = st.grab_box(ft, selection_size, first_order) # select the area around desired peak
+                fourier_space_peak = st.grab_box(ft, selection_size, order) # select the area around desired peak
 
                 peaks[i] = np.sum(fourier_space_peak)
 
