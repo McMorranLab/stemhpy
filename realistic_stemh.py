@@ -374,17 +374,16 @@ def fit_vac_amps(I_obs, beam_sep_px, initial_guess = None, showValues = True):
     def calculate_intensities(params):
         num_amps = params.size
         I_n = np.zeros(num_amps, dtype=np.float64)
-        #a1, a0, an1 = params  # Amplitudes of the probes This is no longer needed
         I_n[0] = np.sum(np.abs(params)**2)
         for i in range (1, num_amps):
-            I_n[i] = np.sum(params[:num_amps-i] * params[i:]) #I deseperately need to double check this math
+            I_n[i] = np.sum(params[:num_amps-i] * params[i:]) 
         return I_n
 
     def objective_function(params):
         I_model = calculate_intensities(params)
         return np.sum((I_obs - I_model)**2)
 
-
+    #define bounds and constraints
     bounds = [(0, None)] * num_amps
     constraint = {'type': 'eq', 'fun': normalization_constraint}
     
@@ -394,7 +393,6 @@ def fit_vac_amps(I_obs, beam_sep_px, initial_guess = None, showValues = True):
     # Extract optimized amplitudes
     optimized_amplitudes = result.x
     if showValues:
-        #inten_model = np.array([I_model[1], I_model[0],I_model[1]])
         print("Estimated amplitudes:", optimized_amplitudes)
         I_model = calculate_intensities(optimized_amplitudes)
         print("Modeled intensities:", I_model)
