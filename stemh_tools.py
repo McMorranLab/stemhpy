@@ -11,7 +11,7 @@ from scipy.ndimage import gaussian_filter
 
 
 
-def find_fft_peaks(ft, num_peaks=2, filter_strength=25, gaussian_strength=10):
+def find_fft_peaks(ft, num_peaks=2, filter_strength=25, gaussian_strength=10, debug=False):
     '''
     Finds the locations of peaks in Fourier transforms of interference patterns.
     The phase of these peaks IS the STEMH measurement.
@@ -27,10 +27,15 @@ def find_fft_peaks(ft, num_peaks=2, filter_strength=25, gaussian_strength=10):
         Size of neighborhood a given pixel is compared to when looking for maxima. Should be less than beam separation in pixels
     gaussian_strength: int or float
         standard deviation of 2D gaussian used to smooth list of maxima found after applying filter
-
+    debug: bool
+        whether or not to output intermediate values to debug function output
+        
     Returns
     -------
     num_peaks x 2 array of peak locations
+
+    If debug == True, num_peaks x 2 array of peak locations, 2D array of ft after maximum filtering,
+    and two 1D arrays of length ft.shape[0]: the maxima of each row in the maximum-filtered ft and the gaussian-smoothed maxima
     '''
     # conditional to make sure that ft is an absolute value
     if not np.all(np.isreal(ft)):
@@ -66,7 +71,10 @@ def find_fft_peaks(ft, num_peaks=2, filter_strength=25, gaussian_strength=10):
     
     output_peaks = peak_locs_by_height[:num_peaks]
 
-    return output_peaks
+    if debug:
+        return output_peaks, filtered_ft, row_maxima, smoothed_row_maxima
+    else:
+        return output_peaks
 
 
 def grab_box(arr, square_length=None, center=None, selection_indices=None):
